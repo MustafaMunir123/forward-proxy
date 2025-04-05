@@ -15,6 +15,8 @@ func Listen(port int) {
 				return
 			}
 			log.Println("Received request:\n=======> Method:", r.Method, "\n=======> URL:", r.URL.String())
+
+			r.Header.Set("X-Forwarded-For", r.RemoteAddr)
 			res, err := Request(r.URL.String())
 			if err != nil {
 				http.Error(w, "Failed to fetch target URL", http.StatusBadGateway)
@@ -22,13 +24,14 @@ func Listen(port int) {
 			}
 			if res.StatusCode == 200 {
 				defer res.Body.Close()
-				w.WriteHeader(res.StatusCode)
 
 				for key, values := range res.Header {
 					for _, value := range values {
 						w.Header().Add(key, value)
 					}
 				}
+				w.WriteHeader(res.StatusCode)
+
 				log.Println("Forwarding Response to:", r.RemoteAddr)
 				io.Copy(w, res.Body)
 			}
