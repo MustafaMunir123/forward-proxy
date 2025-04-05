@@ -25,6 +25,13 @@ func Listen(port int) {
 				return
 			}
 
+			// check for banned words
+			if containsBannedWord(r.URL.Host) {
+				log.Println("Website content not allowed.", r.URL.Host)
+				http.Error(w, "Website content not allowed.", http.StatusForbidden)
+				return
+			}
+
 			res, err := Request(r.URL.String())
 			if err != nil {
 				http.Error(w, "Failed to fetch target URL", http.StatusBadGateway)

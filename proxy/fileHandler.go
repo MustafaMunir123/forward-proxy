@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strings"
 )
 
 func loadHosts() []string {
@@ -24,6 +25,24 @@ func loadHosts() []string {
 	return hosts
 }
 
+func loadWords() []string {
+	path := "proxy/banned-words.txt"
+	file, err := os.Open(path)
+	if err != nil {
+		fmt.Println("Error Processing Banned Words", err)
+		os.Exit(1)
+	}
+	defer file.Close()
+
+	var words []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		word := scanner.Text()
+		words = append(words, word)
+	}
+	return words
+}
+
 func isForbiddenHost(host string) bool {
 	forbiddenHosts := loadHosts()
 
@@ -35,6 +54,13 @@ func isForbiddenHost(host string) bool {
 	return false
 }
 
-// func containsBannedWord(host string) bool {
+func containsBannedWord(host string) bool {
+	bannedWords := loadWords()
 
-// }
+	for i := 0; i < len(bannedWords); i++ {
+		if strings.Contains(host, bannedWords[i]) {
+			return true
+		}
+	}
+	return false
+}
