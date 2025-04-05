@@ -8,16 +8,16 @@ import (
 )
 
 func Listen(port int) {
+	var err error
 	http.HandleFunc("GET /",
 		func(w http.ResponseWriter, r *http.Request) {
 			if r.Method != http.MethodGet {
 				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 				return
 			}
-			log.Println("Received request:\n=======> Method:", r.Method, "\n=======> URL:", r.URL.String())
+			log.Println("Received request:\n=======> Method:", r.Method, "\n=======> Host:", r.URL.String(), "\n=======> Client:", r.RemoteAddr)
 			r.Header.Set("X-Forwarded-For", r.RemoteAddr)
 
-			// check for forbidden hosts
 			if isForbiddenHost(r.URL.Host) {
 				// w.WriteHeader(http.StatusForbidden)
 				log.Println("Website content not allowed.", r.URL.Host)
@@ -25,7 +25,6 @@ func Listen(port int) {
 				return
 			}
 
-			// check for banned words
 			if containsBannedWord(r.URL.Host) {
 				log.Println("Website content not allowed.", r.URL.Host)
 				http.Error(w, "Website content not allowed.", http.StatusForbidden)
@@ -45,13 +44,13 @@ func Listen(port int) {
 						w.Header().Add(key, value)
 					}
 				}
-				w.WriteHeader(res.StatusCode) // Step 2 intentionally return 403 for banned request
+				w.WriteHeader(res.StatusCode)
 
 				log.Println("Forwarding Response to:", r.RemoteAddr)
 				io.Copy(w, res.Body)
 			}
 		})
-	err := http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", port), nil)
+	err = http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", port), nil)
 	if err != nil {
 		log.Fatal("Error Occured", err)
 	}

@@ -8,8 +8,7 @@ import (
 )
 
 func loadHosts() []string {
-	path := "proxy/forbidden-hosts.txt"
-	file, err := os.Open(path)
+	file, err := os.Open(FORBIDDEN_HOSTS_PATH)
 	if err != nil {
 		fmt.Println("Error Processing Forbidden Hosts", err)
 		os.Exit(1)
@@ -26,8 +25,7 @@ func loadHosts() []string {
 }
 
 func loadWords() []string {
-	path := "proxy/banned-words.txt"
-	file, err := os.Open(path)
+	file, err := os.Open(BANNED_WORDS_PATH)
 	if err != nil {
 		fmt.Println("Error Processing Banned Words", err)
 		os.Exit(1)
