@@ -2,7 +2,6 @@ package proxy
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 )
@@ -36,18 +35,19 @@ func Listen(port int) {
 				http.Error(w, "Failed to fetch target URL", http.StatusBadGateway)
 				return
 			}
-			if res.StatusCode == 200 {
-				defer res.Body.Close()
+			if res.Status == 200 {
+				// defer res.Body.Close()
 
 				for key, values := range res.Header {
 					for _, value := range values {
 						w.Header().Add(key, value)
 					}
 				}
-				w.WriteHeader(res.StatusCode)
+				w.WriteHeader(res.Status)
 
 				log.Println("Forwarding Response to:", r.RemoteAddr)
-				io.Copy(w, res.Body)
+				w.Write(res.Body)
+
 			}
 		})
 	err = http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", port), nil)
@@ -56,11 +56,31 @@ func Listen(port int) {
 	}
 }
 
-func Request(url string) (*http.Response, error) {
+// func Request(url string) (*http.Response, error) {
+// 	res, err := http.Get(url)
+// 	if err != nil {
+// 		log.Printf("Invalid Request: %s \n=======> ERROR: %v", url, err)
+// 		return nil, err
+// 	}
+// 	body, err := httputil.DumpResponse(res, true) // cache
+
+// 	return res, nil
+// }
+
+func Request(url string) (*CachedResponse, error) {
+	cachedResponse := getCachedResponse(url)
+	if cachedResponse != nil {
+		return cachedResponse, nil
+	}
+
 	res, err := http.Get(url)
 	if err != nil {
 		log.Printf("Invalid Request: %s \n=======> ERROR: %v", url, err)
 		return nil, err
 	}
-	return res, nil
+	defer res.Body.Close()
+
+	cachedResponse = cacheNewResponse(url, *res)
+
+	return cachedResponse, nil
 }
